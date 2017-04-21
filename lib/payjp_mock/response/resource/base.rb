@@ -8,5 +8,9 @@ module PayjpMock
     def initialize(attributes = {})
       @attributes = default_attributes.merge(attributes.symbolize_keys)
     end
+
+    def status
+      200
+    end
   end
 end

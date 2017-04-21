@@ -15,5 +15,9 @@ module PayjpMock::Response
       @attributes[:count] = count
       @attributes[:data]  = count.times.map { yield.to_h }
     end
+
+    def status
+      200
+    end
   end
 end

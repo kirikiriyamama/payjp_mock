@@ -11,5 +11,7 @@ RSpec.describe PayjpMock::Response::Deleted do
     expect(attrs[:deleted]).to be_truthy
 
     expect(deleted.body).to be_a String
+    expect(deleted.status).to eq 200
+    expect(deleted.exception).to be_nil
   end
 end

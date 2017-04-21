@@ -15,6 +15,7 @@ class PayjpMock::Request
   end
 
   def stub
-    stub_request(@method, @url).to_return(body: @response.body)
+    stub_request(@method, @url)
+      .to_return(body: @response.body, status: @response.status, exception: @response.exception)
   end
 end

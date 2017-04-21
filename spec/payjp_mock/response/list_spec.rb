@@ -11,6 +11,8 @@ RSpec.describe PayjpMock::Response::List do
     expect(attrs[:data]).to be_empty
 
     expect(list.body).to be_a String
+    expect(list.status).to eq 200
+    expect(list.exception).to be_nil
   end
 
   specify do

@@ -395,4 +395,42 @@ RSpec.describe PayjpMock::WebMockWrapper do
       end
     end
   end
+
+  describe 'card error' do
+    specify do
+      payjp_stub(:tokens, :create, error: :card_error)
+      expect { Payjp::Token.create }.to raise_error Payjp::CardError
+    end
+  end
+
+  describe 'invalid request error' do
+    specify do
+      payjp_stub(:charges, :create, error: :invalid_request_error)
+      expect { Payjp::Charge.create }.to raise_error Payjp::InvalidRequestError
+    end
+  end
+
+  describe 'authentication error' do
+    specify do
+      payjp_stub(:customer, :retrieve, error: 'authentication_error')
+      expect { Payjp::Customer.retrieve('cus_xxxxx') }.to raise_error Payjp::AuthenticationError
+    end
+  end
+
+  describe 'api connection error' do
+    specify do
+      payjp_stub(:account, :retrieve, error: 'api_connection_error')
+      expect { Payjp::Account.retrieve }.to raise_error Payjp::APIConnectionError
+    end
+  end
+
+  describe 'api error' do
+    specify do
+      payjp_stub(:transfer, :retrieve)
+      transfer = Payjp::Transfer.retrieve('tr_xxxxx')
+
+      payjp_stub({ transfer: :charges }, :all, error: :api_error)
+      expect { transfer.charges.all }.to raise_error Payjp::APIError
+    end
+  end
 end

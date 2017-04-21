@@ -10,5 +10,7 @@ RSpec.describe PayjpMock::Response::Resource::Event do
     expect(attrs[:data]).to be_a Hash
 
     expect(event.body).to be_a String
+    expect(event.status).to eq 200
+    expect(event.exception).to be_nil
   end
 end

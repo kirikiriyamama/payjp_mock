@@ -2,8 +2,8 @@ require 'payjp_mock/request_builder'
 
 module PayjpMock
   module WebMockWrapper
-    def payjp_stub(resource, operation)
-      builder = RequestBuilder.new(resource, operation)
+    def payjp_stub(resource, operation, error: nil)
+      builder = RequestBuilder.new(resource, operation, error)
       request = builder.build
       request.stub
     end

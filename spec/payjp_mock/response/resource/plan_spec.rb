@@ -9,5 +9,7 @@ RSpec.describe PayjpMock::Response::Resource::Plan do
     expect(attrs[:object]).to eq 'plan'
 
     expect(plan.body).to be_a String
+    expect(plan.status).to eq 200
+    expect(plan.exception).to be_nil
   end
 end

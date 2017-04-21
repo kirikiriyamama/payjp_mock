@@ -7,13 +7,14 @@ module PayjpMock
   class RequestBuilder
     include Util
 
-    def initialize(resource, operation)
+    def initialize(resource, operation, error)
       @resource  = resource.is_a?(Hash) ? resource.symbolize_keys : resource.to_sym
       @operation = operation.to_sym
+      @error     = error&.to_sym
     end
 
     def build
-      method, path_pattern, response =
+      method, path_pattern, success_resp =
         case @resource
         when :charge, :charges
           case @operation
@@ -181,6 +182,21 @@ module PayjpMock
           raise UnknownResource, @resource
         end
 
+      response =
+        case @error
+        when :card_error
+          Response::Error::CardError.new
+        when :invalid_request_error
+          Response::Error::InvalidRequestError.new
+        when :authentication_error
+          Response::Error::AuthenticationError.new
+        when :api_connection_error
+          Response::Error::ApiConnectionError.new
+        when :api_error
+          Response::Error::ApiError.new
+        else
+          success_resp
+        end
       Request.new(method, path_pattern, response)
     end
 

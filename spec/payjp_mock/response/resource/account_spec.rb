@@ -13,5 +13,7 @@ RSpec.describe PayjpMock::Response::Resource::Account do
     expect(attrs[:merchant][:object]).to eq 'merchant'
 
     expect(account.body).to be_a String
+    expect(account.status).to eq 200
+    expect(account.exception).to be_nil
   end
 end

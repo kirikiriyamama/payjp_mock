@@ -5,6 +5,14 @@ class PayjpMock::Response::Base
     @attributes.to_json
   end
 
+  def status
+    raise NotImplementedError
+  end
+
+  def exception
+    nil
+  end
+
   def to_h
     @attributes
   end

@@ -17,5 +17,7 @@ RSpec.describe PayjpMock::Response::Resource::Customer do
     expect(attrs[:subscriptions][:url]).to eq "/v1/customers/#{attrs[:id]}/subscriptions"
 
     expect(customer.body).to be_a String
+    expect(customer.status).to eq 200
+    expect(customer.exception).to be_nil
   end
 end

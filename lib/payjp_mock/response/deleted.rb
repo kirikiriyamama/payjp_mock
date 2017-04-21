@@ -7,5 +7,9 @@ module PayjpMock::Response
         livemode: false
       }
     end
+
+    def status
+      200
+    end
   end
 end

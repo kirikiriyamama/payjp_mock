@@ -12,5 +12,7 @@ RSpec.describe PayjpMock::Response::Resource::Charge do
     expect(attrs[:card][:object]).to eq 'card'
 
     expect(charge.body).to be_a String
+    expect(charge.status).to eq 200
+    expect(charge.exception).to be_nil
   end
 end
