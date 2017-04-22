@@ -1,8 +1,10 @@
-module IntegerExtension
-  def days
-    self * 24 * 60 * 60
+module PayjpMock::Ext
+  module Integer
+    refine ::Integer do
+      def days
+        self * 24 * 60 * 60
+      end
+      alias :day :days
+    end
   end
-  alias :day :days
 end
-
-Integer.send(:include, IntegerExtension)

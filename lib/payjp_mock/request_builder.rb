@@ -1,6 +1,7 @@
 module PayjpMock
   class RequestBuilder
     include Util
+    using   Ext::Hash
 
     def initialize(resource, operation, error)
       @resource  = resource.is_a?(Hash) ? resource.symbolize_keys : resource.to_sym

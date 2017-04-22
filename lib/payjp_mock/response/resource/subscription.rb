@@ -1,5 +1,7 @@
 module PayjpMock::Response::Resource
   class Subscription < Base
+    using PayjpMock::Ext::Integer
+
     PREFIX = 'sub'.freeze
     OBJECT = 'subscription'.freeze
 

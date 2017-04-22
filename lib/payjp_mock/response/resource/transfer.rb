@@ -1,5 +1,7 @@
 module PayjpMock::Response::Resource
   class Transfer < Base
+    using PayjpMock::Ext::Integer
+
     PREFIX = 'tr'.freeze
     OBJECT = 'transfer'.freeze
 
