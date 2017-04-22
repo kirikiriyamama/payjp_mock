@@ -9,9 +9,9 @@ Gem::Specification.new do |spec|
   spec.authors       = ["kirikiriyamama"]
   spec.email         = ["kirikiriyamama@gmail.com"]
 
-  spec.summary       = %q{TODO: Write a short summary, because Rubygems requires one.}
-  spec.description   = %q{TODO: Write a longer description or delete this line.}
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  spec.summary       = "A stubbing library for PAY.JP"
+  spec.description   = "This library creates PAY.JP API stubs and generates dummy responses"
+  spec.homepage      = "https://github.com/kirikiriyamama/payjp_mock"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
