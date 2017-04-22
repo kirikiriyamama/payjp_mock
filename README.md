@@ -40,7 +40,7 @@ specify do
   payjp_stub(:charges, :create)
   Payjp::Charge.create(amount: 3500, card: 'tok_xxxxx', currency: 'jpy')
 
-  # Stubbing nested resources operation such as customer's card list retrival
+  # Stubbing nested resource operations such as customer's card list retrival
   payjp_stub(:customer, :retrival)
   customer = Payjp::Customer.retrieve('cus_xxxxx')
 
