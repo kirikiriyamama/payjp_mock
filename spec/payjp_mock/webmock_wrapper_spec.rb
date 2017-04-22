@@ -12,8 +12,8 @@ RSpec.describe PayjpMock::WebMockWrapper do
   describe 'charges' do
     describe 'create' do
       specify do
-        payjp_stub(:charges, :create)
-        expect(Payjp::Charge.create).to be_a Payjp::Charge
+        stub = payjp_stub(:charges, :create)
+        expect(Payjp::Charge.create.id).to eq stub[:id]
       end
     end
 
@@ -78,8 +78,8 @@ RSpec.describe PayjpMock::WebMockWrapper do
   describe 'customers' do
     describe 'create' do
       specify do
-        payjp_stub(:customers, :create)
-        expect(Payjp::Customer.create).to be_a Payjp::Customer
+        stub = payjp_stub(:customers, :create)
+        expect(Payjp::Customer.create.id).to eq stub[:id]
       end
     end
 
@@ -128,8 +128,8 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
       describe 'create' do
         specify do
-          payjp_stub({ customer: :cards }, :create)
-          expect(customer.cards.create).to be_a Payjp::Card
+          stub = payjp_stub({ customer: :cards }, :create)
+          expect(customer.cards.create.id).to eq stub[:id]
         end
       end
 
@@ -177,8 +177,8 @@ RSpec.describe PayjpMock::WebMockWrapper do
   describe 'plans' do
     describe 'create' do
       specify do
-        payjp_stub(:plans, :create)
-        expect(Payjp::Plan.create).to be_a Payjp::Plan
+        stub = payjp_stub(:plans, :create)
+        expect(Payjp::Plan.create.id).to eq stub[:id]
       end
     end
 
@@ -225,8 +225,8 @@ RSpec.describe PayjpMock::WebMockWrapper do
   describe 'subscriptions' do
     describe 'create' do
       specify do
-        payjp_stub(:subscriptions, :create)
-        expect(Payjp::Subscription.create).to be_a Payjp::Subscription
+        stub = payjp_stub(:subscriptions, :create)
+        expect(Payjp::Subscription.create.id).to eq stub[:id]
       end
     end
 
@@ -312,8 +312,8 @@ RSpec.describe PayjpMock::WebMockWrapper do
   describe 'tokens' do
     describe 'create' do
       specify do
-        payjp_stub('tokens', :create)
-        expect(Payjp::Token.create).to be_a Payjp::Token
+        stub = payjp_stub('tokens', :create)
+        expect(Payjp::Token.create.id).to eq stub[:id]
       end
     end
 
@@ -381,8 +381,8 @@ RSpec.describe PayjpMock::WebMockWrapper do
   describe 'accounts' do
     describe 'retrieve' do
       specify do
-        payjp_stub(:account, :retrieve)
-        expect(Payjp::Account.retrieve).to be_a Payjp::Account
+        stub = payjp_stub(:account, :retrieve)
+        expect(Payjp::Account.retrieve.id).to eq stub[:id]
       end
     end
   end

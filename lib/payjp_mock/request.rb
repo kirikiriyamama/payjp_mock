@@ -3,6 +3,7 @@ require 'webmock'
 
 class PayjpMock::Request
   include WebMock::API
+  using   PayjpMock::Ext::Hash
 
   API_HOST    = 'api.pay.jp'.freeze
   API_VERSION = 'v1'.freeze
@@ -17,5 +18,7 @@ class PayjpMock::Request
   def stub
     stub_request(@method, @url)
       .to_return(body: @response.body, status: @response.status, exception: @response.exception)
+
+    JSON.parse(@response.body || '{}').symbolize_keys
   end
 end
