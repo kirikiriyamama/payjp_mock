@@ -42,7 +42,6 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:charge, :refund)
         response = charge.refund
 
-        expect(response).to be_a Payjp::Charge
         expect(response.refunded).to be_truthy
       end
     end
@@ -61,7 +60,6 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:charge, :capture)
         response = charge.capture
 
-        expect(response).to be_a Payjp::Charge
         expect(response.captured).to be_truthy
       end
     end
@@ -110,7 +108,6 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:customer, :delete)
         response = customer.delete
 
-        expect(response).to be_a Payjp::Customer
         expect(response.deleted).to be_truthy
       end
     end
@@ -161,7 +158,6 @@ RSpec.describe PayjpMock::WebMockWrapper do
           payjp_stub({ customer: :card }, :delete)
           response = card.delete
 
-          expect(response).to be_a Payjp::Card
           expect(response.deleted).to be_truthy
         end
       end
@@ -211,7 +207,6 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:plan, :delete)
         response = plan.delete
 
-        expect(response).to be_a Payjp::Plan
         expect(response.deleted).to be_truthy
       end
     end
@@ -260,7 +255,6 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:subscription, :pause)
         response = subscription.pause
 
-        expect(response).to be_a Payjp::Subscription
         expect(response.status).to eq 'paused'
         expect(response.paused_at).to be_an Integer
       end
@@ -274,7 +268,6 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:subscription, :resume)
         response = subscription.resume
 
-        expect(response).to be_a Payjp::Subscription
         expect(response.status).to eq 'active'
         expect(response.resumed_at).to be_an Integer
       end
@@ -288,7 +281,6 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:subscription, :cancel)
         response = subscription.cancel
 
-        expect(response).to be_a Payjp::Subscription
         expect(response.status).to eq 'canceled'
         expect(response.canceled_at).to be_an Integer
       end
@@ -302,7 +294,6 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:subscription, :delete)
         response = subscription.delete
 
-        expect(response).to be_a Payjp::Subscription
         expect(response.deleted).to be_truthy
       end
     end
