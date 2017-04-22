@@ -1,8 +1,3 @@
-require 'payjp_mock/ext/hash'
-require 'payjp_mock/request'
-require 'payjp_mock/response'
-require 'payjp_mock/util'
-
 module PayjpMock
   class RequestBuilder
     include Util

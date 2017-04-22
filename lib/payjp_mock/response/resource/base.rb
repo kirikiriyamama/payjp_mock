@@ -1,6 +1,3 @@
-require 'payjp_mock/ext'
-require 'payjp_mock/util'
-
 module PayjpMock
   class Response::Resource::Base < Response::Base
     include Util

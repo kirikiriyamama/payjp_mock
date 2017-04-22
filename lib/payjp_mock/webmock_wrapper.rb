@@ -1,5 +1,3 @@
-require 'payjp_mock/request_builder'
-
 module PayjpMock
   module WebMockWrapper
     def payjp_stub(resource, operation, error: nil)
