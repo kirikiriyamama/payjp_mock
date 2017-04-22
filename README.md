@@ -1,8 +1,8 @@
 # PayjpMock
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/payjp_mock`. To experiment with that code, run `bin/console` for an interactive prompt.
+A stubbing library for PAY.JP
 
-TODO: Delete this and the text above, and describe your gem
+This library creates PAY.JP API stubs and generates dummy responses. This is under development, so any incompatible change might happen.
 
 ## Installation
 
@@ -22,7 +22,38 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Here's an example with RSpec:
+
+```ruby
+# spec/spec_helper.rb
+require 'payjp_mock'
+
+RSpec.configure do |config|
+  config.include PayjpMock::WebMockWrapper
+end
+
+# Your spec file
+require 'payjp'
+
+specify do
+  # Stubbing charge creation
+  payjp_stub(:charges, :create)
+  Payjp::Charge.create(amount: 3500, card: 'tok_xxxxx', currency: 'jpy')
+
+  # Stubbing nested resources operation such as customer's card list retrival
+  payjp_stub(:customer, :retrival)
+  customer = Payjp::Customer.retrieve('cus_xxxxx')
+
+  payjp_stub({ customer: :cards }, :all)
+  customer.cards.all
+
+  # Stubbing error responses
+  payjp_stub({ customer: :cards }, :create, error: :invalid_request_error)
+  customer.cards.create #=> Raises a Payjp::InvalidRequestError
+
+  # snip
+end
+```
 
 ## Development
 
@@ -34,6 +65,9 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/kirikiriyamama/payjp_mock. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
+## Thanks
+
+[webpay/webpay-mock](https://github.com/webpay/webpay-mock): As an implementation reference
 
 ## License
 
