@@ -19,8 +19,5 @@ module PayjpMock::Response::Resource
         subscriptions: PayjpMock::Response::List.new("/customers/#{id}/subscriptions").to_h
       }
     end
-
-    def override(attributes)
-    end
   end
 end
