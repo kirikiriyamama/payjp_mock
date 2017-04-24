@@ -37,7 +37,7 @@ require 'payjp'
 
 specify do
   # Stubbing charge creation
-  payjp_stub(:charges, :create)
+  payjp_stub(:charges, :create, params: { amount: 3500, card: 'tok_xxxxx', currency: 'jpy' })
   Payjp::Charge.create(amount: 3500, card: 'tok_xxxxx', currency: 'jpy')
 
   # Stubbing nested resource operations such as customer's card list retrival

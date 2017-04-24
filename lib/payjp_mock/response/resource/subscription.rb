@@ -28,5 +28,17 @@ module PayjpMock::Response::Resource
         prorate:              false
       }
     end
+
+    def canonicalize(key, value)
+      case key
+      when :plan
+        { plan: Plan.new(id: value).to_h }
+      when :trial_end
+        now = Time.now.to_i
+        { status: 'trial', trial_start: now - 10.days, trial_end: value }
+      else
+        super
+      end
+    end
   end
 end

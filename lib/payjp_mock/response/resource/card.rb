@@ -27,5 +27,16 @@ module PayjpMock::Response::Resource
         object:            OBJECT
       }
     end
+
+    def canonicalize(key, value)
+      case key
+      when :number
+        { last4: value[-4..-1] }
+      when :cvc
+        {}
+      else
+        super
+      end
+    end
   end
 end

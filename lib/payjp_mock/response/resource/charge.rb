@@ -1,5 +1,7 @@
 module PayjpMock::Response::Resource
   class Charge < Base
+    using PayjpMock::Ext::Integer
+
     PREFIX = 'ch'.freeze
     OBJECT = 'charge'.freeze
 
@@ -28,6 +30,26 @@ module PayjpMock::Response::Resource
         refunded:        false,
         subscription:    nil
       }
+    end
+
+    def canonicalize(key, value)
+      case key
+      when :card
+        { card: Card.new(value.is_a?(Hash)? value : {}).to_h }
+      when :capture
+        { captured: value, captured_at: value ? Time.now.to_i : nil }
+      when :expiry_days
+        expired_at =
+          if value == 60
+            expired_date = Time.now + 59.days
+            Time.local(expired_date.year, expired_date.month, expired_date.day, 23, 59, 59)
+          else
+            Time.now + value.days
+          end
+        { expired_at: expired_at.to_i }
+      else
+        super
+      end
     end
   end
 end
