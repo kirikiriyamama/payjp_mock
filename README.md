@@ -58,6 +58,10 @@ specify do
   payjp_stub({ customer: :cards }, :create, error: :invalid_request_error)
   customer.cards.create #=> Raises a Payjp::InvalidRequestError
 
+  # Specifying error response attributes
+  payjp_stub(:charges, :create, response: payjp_card_error(code: 'processing_error'))
+  Payjp::Charge.create #=> Raises a Payjp::CardError with code processing_error
+
   # snip
 end
 ```

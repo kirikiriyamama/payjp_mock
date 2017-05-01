@@ -3,12 +3,25 @@ module PayjpMock
     include Util
     using   Ext::Hash
 
-    def initialize(resource, operation, params, source, error)
+    def initialize(resource, operation, params, source, error, response)
       @resource  = resource.is_a?(Hash) ? resource.symbolize_keys : resource.to_sym
       @operation = operation.to_sym
       @params    = params.symbolize_keys
       @source    = source.symbolize_keys
-      @error     = error&.to_sym
+
+      @response = response ||
+        case error&.to_sym
+        when :card_error
+          Response::Error::CardError.new
+        when :invalid_request_error
+          Response::Error::InvalidRequestError.new
+        when :authentication_error
+          Response::Error::AuthenticationError.new
+        when :api_connection_error
+          Response::Error::ApiConnectionError.new
+        when :api_error
+          Response::Error::ApiError.new
+        end
     end
 
     def build
@@ -224,22 +237,7 @@ module PayjpMock
           raise UnknownResource, @resource
         end
 
-      response =
-        case @error
-        when :card_error
-          Response::Error::CardError.new
-        when :invalid_request_error
-          Response::Error::InvalidRequestError.new
-        when :authentication_error
-          Response::Error::AuthenticationError.new
-        when :api_connection_error
-          Response::Error::ApiConnectionError.new
-        when :api_error
-          Response::Error::ApiError.new
-        else
-          success_resp
-        end
-      Request.new(method, path_pattern, @params, response)
+      Request.new(method, path_pattern, @params, @response || success_resp)
     end
 
     UnknownResource  = Class.new(StandardError)

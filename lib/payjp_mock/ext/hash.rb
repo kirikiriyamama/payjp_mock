@@ -14,6 +14,10 @@ module PayjpMock::Ext
       def except(*keys)
         each_with_object({}) { |(k, v), h| h[k] = v unless keys.include?(k) }
       end
+
+      def compact
+        reject { |_, v| v.nil? }
+      end
     end
   end
 end

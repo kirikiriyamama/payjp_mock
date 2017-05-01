@@ -46,4 +46,12 @@ RSpec.describe PayjpMock::Ext::Hash do
       )
     end
   end
+
+  describe '#compact' do
+    specify do
+      expect(
+        { k1: :v1, k2: nil }.compact
+      ).to eq({ k1: :v1 })
+    end
+  end
 end

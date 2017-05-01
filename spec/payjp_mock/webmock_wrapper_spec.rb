@@ -507,41 +507,95 @@ RSpec.describe PayjpMock::WebMockWrapper do
     end
   end
 
-  describe 'card error' do
-    specify do
-      payjp_stub(:tokens, :create, error: :card_error)
-      expect { Payjp::Token.create }.to raise_error Payjp::CardError
+  describe 'error' do
+    describe 'card error' do
+      specify do
+        payjp_stub(:tokens, :create, error: :card_error)
+        expect { Payjp::Token.create }.to raise_error Payjp::CardError
+      end
+    end
+
+    describe 'invalid request error' do
+      specify do
+        payjp_stub(:charges, :create, error: :invalid_request_error)
+        expect { Payjp::Charge.create }.to raise_error Payjp::InvalidRequestError
+      end
+    end
+
+    describe 'authentication error' do
+      specify do
+        payjp_stub(:customer, :retrieve, error: 'authentication_error')
+        expect { Payjp::Customer.retrieve('cus_xxxxx') }.to raise_error Payjp::AuthenticationError
+      end
+    end
+
+    describe 'api connection error' do
+      specify do
+        payjp_stub(:account, :retrieve, error: 'api_connection_error')
+        expect { Payjp::Account.retrieve }.to raise_error Payjp::APIConnectionError
+      end
+    end
+
+    describe 'api error' do
+      specify do
+        payjp_stub(:transfer, :retrieve)
+        transfer = Payjp::Transfer.retrieve('tr_xxxxx')
+
+        payjp_stub({ transfer: :charges }, :all, error: :api_error)
+        expect { transfer.charges.all }.to raise_error Payjp::APIError
+      end
     end
   end
 
-  describe 'invalid request error' do
-    specify do
-      payjp_stub(:charges, :create, error: :invalid_request_error)
-      expect { Payjp::Charge.create }.to raise_error Payjp::InvalidRequestError
+  describe 'response' do
+    describe 'card error' do
+      specify do
+        payjp_stub(:customer, :retrieve)
+        customer = Payjp::Customer.retrieve('cus_xxxxx')
+
+        payjp_stub({ customer: :cards }, :create, response: payjp_card_error(code: 'expired_card'))
+        expect { customer.cards.create }.to raise_error do |error|
+          expect(error).to be_a Payjp::CardError
+          expect(error.code).to eq 'expired_card'
+        end
+      end
     end
-  end
 
-  describe 'authentication error' do
-    specify do
-      payjp_stub(:customer, :retrieve, error: 'authentication_error')
-      expect { Payjp::Customer.retrieve('cus_xxxxx') }.to raise_error Payjp::AuthenticationError
+    describe 'invalid request error' do
+      specify do
+        payjp_stub(:charges, :create, response: payjp_invalid_request_error(param: 'currency'))
+        expect { Payjp::Charge.create }.to raise_error do |error|
+          expect(error).to be_a Payjp::InvalidRequestError
+          expect(error.param).to eq 'currency'
+        end
+      end
     end
-  end
 
-  describe 'api connection error' do
-    specify do
-      payjp_stub(:account, :retrieve, error: 'api_connection_error')
-      expect { Payjp::Account.retrieve }.to raise_error Payjp::APIConnectionError
+    describe 'authentication error' do
+      specify do
+        payjp_stub(:events, :all, response: payjp_authentication_error)
+        expect { Payjp::Event.all }.to raise_error Payjp::AuthenticationError
+      end
     end
-  end
 
-  describe 'api error' do
-    specify do
-      payjp_stub(:transfer, :retrieve)
-      transfer = Payjp::Transfer.retrieve('tr_xxxxx')
+    describe 'api connection error' do
+      specify do
+        payjp_stub(:plan, :retrieve, response: payjp_api_connection_error)
+        expect { Payjp::Plan.retrieve('pln_xxxxx') }.to raise_error Payjp::APIConnectionError
+      end
+    end
 
-      payjp_stub({ transfer: :charges }, :all, error: :api_error)
-      expect { transfer.charges.all }.to raise_error Payjp::APIError
+    describe 'api error' do
+      specify do
+        payjp_stub(:charge, :retrieve)
+        charge = Payjp::Charge.retrieve('ch_xxxxx')
+
+        payjp_stub(:charge, :refund, response: payjp_api_error('code' => 'pg_wrong'))
+        expect { charge.refund }.to raise_error do |error|
+          expect(error).to be_a Payjp::APIError
+          expect(error.json_body[:error][:code]).to eq 'pg_wrong'
+        end
+      end
     end
   end
 end
