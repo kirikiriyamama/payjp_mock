@@ -21,8 +21,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
     describe 'retrieve' do
       specify do
-        payjp_stub(:charge, :retrieve)
-        expect(Payjp::Charge.retrieve('ch_xxxxx')).to be_a Payjp::Charge
+        payjp_stub(:charge, :retrieve, source: { description: 'description' })
+        charge = Payjp::Charge.retrieve('ch_xxxxx')
+
+        expect(charge.description).to eq 'description'
       end
     end
 
@@ -31,23 +33,43 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:charge, :retrieve)
         charge = Payjp::Charge.retrieve('ch_xxxxx')
 
-        payjp_stub(:charge, :save, params: { description: 'description' })
+        payjp_stub(:charge, :save, params: { description: 'description' }, source: { amount: 1000 })
         charge.description = 'description'
 
         response = charge.save
+
         expect(response.description).to eq 'description'
+        expect(response.amount).to eq 1000
       end
     end
 
     describe 'refund' do
-      specify do
+      let!(:charge) do
         payjp_stub(:charge, :retrieve)
-        charge = Payjp::Charge.retrieve('ch_xxxxx')
+        Payjp::Charge.retrieve('ch_xxxxx')
+      end
 
-        payjp_stub(:charge, :refund)
-        response = charge.refund
+      context 'when parameter `amount` is specified' do
+        specify do
+          payjp_stub(:charge, :refund, params: { amount: 1000 }, source: { amount: 2000 })
+          response = charge.refund(amount: 1000)
 
-        expect(response.refunded).to be_truthy
+          expect(response.amount).to eq 2000
+          expect(response.amount_refunded).to eq 1000
+          expect(response.refunded).to be_truthy
+        end
+      end
+
+      context "when parameter `amount` isn't specified" do
+        specify do
+          payjp_stub(:charge, :refund, params: { refund_reason: 'reason' }, source: { amount: 1000 })
+          response = charge.refund(refund_reason: 'reason')
+
+          expect(response.amount).to eq 1000
+          expect(response.amount_refunded).to eq 1000
+          expect(response.refunded).to be_truthy
+          expect(response.refund_reason).to eq 'reason'
+        end
       end
     end
 
@@ -58,24 +80,40 @@ RSpec.describe PayjpMock::WebMockWrapper do
     end
 
     describe 'capture' do
-      specify do
+      let!(:charge) do
         payjp_stub(:charge, :retrieve)
-        charge = Payjp::Charge.retrieve('ch_xxxxx')
+        Payjp::Charge.retrieve('ch_xxxxx')
+      end
 
-        payjp_stub(:charge, :capture)
-        response = charge.capture
+      context 'when parameter `amount` is specified' do
+        specify do
+          payjp_stub(:charge, :capture, params: { amount: 1000 }, source: { amount: 3000 })
+          response = charge.capture(amount: 1000)
 
-        expect(response.captured).to be_truthy
+          expect(response.captured).to be_truthy
+          expect(response.refunded).to be_truthy
+          expect(response.amount_refunded).to eq 2000
+        end
+      end
+
+      context "when parameter `amount` isn't specified" do
+        specify do
+          payjp_stub(:charge, :capture)
+          response = charge.capture
+
+          expect(response.captured).to be_truthy
+          expect(response.refunded).to be_falsy
+          expect(response.amount_refunded).to eq 0
+        end
       end
     end
 
     describe 'all' do
       specify do
-        payjp_stub(:charges, :all)
+        payjp_stub(:charges, :all, source: { description: 'description' })
         response = Payjp::Charge.all
 
-        expect(response).to be_a Payjp::ListObject
-        expect(response.data.first).to be_a Payjp::Charge
+        expect(response.data.first.description).to eq 'description'
       end
     end
   end
@@ -92,8 +130,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
     describe 'retrieve' do
       specify do
-        payjp_stub(:customer, :retrieve)
-        expect(Payjp::Customer.retrieve('cus_xxxxx')).to be_a Payjp::Customer
+        payjp_stub(:customer, :retrieve, source: { description: 'description' })
+        customer = Payjp::Customer.retrieve('cus_xxxxx')
+
+        expect(customer.description).to eq 'description'
       end
     end
 
@@ -102,11 +142,15 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:customer, :retrieve)
         customer = Payjp::Customer.retrieve('cus_xxxxx')
 
-        payjp_stub(:customers, :save, params: { description: 'description' })
-        customer.description  = 'description'
+        payjp_stub(:customers, :save,
+          params: { description: 'description' }, source: { id: 'cus_xxxxx' }
+        )
+        customer.description = 'description'
 
         response = customer.save
-        expect(customer.description).to eq 'description'
+
+        expect(response.description).to eq 'description'
+        expect(response.id).to eq 'cus_xxxxx'
       end
     end
 
@@ -124,17 +168,18 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
     describe 'all' do
       specify do
-        payjp_stub(:customers, :all)
+        payjp_stub(:customers, :all, source: { description: 'description' })
         response = Payjp::Customer.all
 
-        expect(response).to be_a Payjp::ListObject
-        expect(response.data.first).to be_a Payjp::Customer
+        expect(response.data.first.description).to eq 'description'
       end
     end
 
     describe 'cards' do
-      before { payjp_stub(:customer, :retrieve) }
-      let!(:customer) { Payjp::Customer.retrieve('cus_xxxxx') }
+      let!(:customer) do
+        payjp_stub(:customer, :retrieve)
+        Payjp::Customer.retrieve('cus_xxxxx')
+      end
 
       describe 'create' do
         specify do
@@ -148,8 +193,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
       describe 'retrieve' do
         specify do
-          payjp_stub({ customer: :card }, :retrieve)
-          expect(customer.cards.retrieve('car_xxxxx')).to be_a Payjp::Card
+          payjp_stub({ customer: :card }, :retrieve, source: { last4: '0000' })
+          card = customer.cards.retrieve('car_xxxxx')
+
+          expect(card.last4).to eq '0000'
         end
       end
 
@@ -158,13 +205,16 @@ RSpec.describe PayjpMock::WebMockWrapper do
           payjp_stub({ customer: :card }, :retrieve)
           card = customer.cards.retrieve('car_xxxxx')
 
-          payjp_stub({ customer: :card }, :save, params: { exp_year: 2038, exp_month: 1 })
+          payjp_stub({ customer: :card }, :save,
+            params: { exp_year: 2038, exp_month: 1 }, source: { exp_year: 2017 }
+          )
           card.exp_year  = 2038
           card.exp_month = 1
 
           response = card.save
-          expect(card.exp_year).to eq 2038
-          expect(card.exp_month).to eq 1
+
+          expect(response.exp_year).to eq 2038
+          expect(response.exp_month).to eq 1
         end
       end
 
@@ -182,11 +232,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
       describe 'all' do
         specify do
-          payjp_stub({ customer: :cards }, :all)
+          payjp_stub({ customer: :cards }, :all, source: { customer: customer.id })
           response = customer.cards.all
 
-          expect(response).to be_a Payjp::ListObject
-          expect(response.data.first).to be_a Payjp::Card
+          expect(response.data.first.customer).to eq customer.id
         end
       end
     end
@@ -205,8 +254,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
     describe 'retrieve' do
       specify do
-        payjp_stub(:plan, :retrieve)
-        expect(Payjp::Plan.retrieve('pln_xxxxx')).to be_a Payjp::Plan
+        payjp_stub(:plan, :retrieve, source: { amount: 2000 })
+        plan = Payjp::Plan.retrieve('pln_xxxxx')
+
+        expect(plan.amount).to eq 2000
       end
     end
 
@@ -215,11 +266,13 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:plan, :retrieve)
         plan = Payjp::Plan.retrieve('pln_xxxxx')
 
-        payjp_stub(:plan, :save, params: { name: 'name' })
+        payjp_stub(:plan, :save, params: { name: 'name' }, source: { interval: 'year' })
         plan.name = 'name'
 
         response = plan.save
+
         expect(response.name).to eq 'name'
+        expect(response.interval).to eq 'year'
       end
     end
 
@@ -237,11 +290,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
     describe 'all' do
       specify do
-        payjp_stub(:plans, :all)
+        payjp_stub(:plans, :all, source: { interval: 'year' })
         response = Payjp::Plan.all
 
-        expect(response).to be_a Payjp::ListObject
-        expect(response.data.first).to be_a Payjp::Plan
+        expect(response.data.first.interval).to eq 'year'
       end
     end
   end
@@ -258,8 +310,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
     describe 'retrieve' do
       specify do
-        payjp_stub(:subscription, :retrieve)
-        expect(Payjp::Subscription.retrieve('sub_xxxxx')).to be_a Payjp::Subscription
+        payjp_stub(:subscription, :retrieve, source: { customer: 'cus_xxxxx' })
+        subscription = Payjp::Subscription.retrieve('sub_xxxxx')
+
+        expect(subscription.customer).to eq 'cus_xxxxx'
       end
     end
 
@@ -268,11 +322,15 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:subscription, :retrieve)
         subscription = Payjp::Subscription.retrieve('sub_xxxxx')
 
-        payjp_stub(:subscription, :save, params: { plan: 'pln_xxxxx' })
+        payjp_stub(:subscription, :save,
+          params: { plan: 'pln_xxxxx' }, source: { customer: 'cus_xxxxx' }
+        )
         subscription.plan = 'pln_xxxxx'
 
         response = subscription.save
+
         expect(response.plan.id).to eq 'pln_xxxxx'
+        expect(response.customer).to eq 'cus_xxxxx'
       end
     end
 
@@ -281,24 +339,48 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:subscription, :retrieve)
         subscription = Payjp::Subscription.retrieve('sub_xxxxx')
 
-        payjp_stub(:subscription, :pause)
+        payjp_stub(:subscription, :pause, source: { prorate: true })
         response = subscription.pause
 
         expect(response.status).to eq 'paused'
         expect(response.paused_at).to be_an Integer
+        expect(response.prorate).to be_truthy
       end
     end
 
     describe 'resume' do
-      specify do
+      let!(:subscription) do
         payjp_stub(:subscription, :retrieve)
-        subscription = Payjp::Subscription.retrieve('sub_xxxxx')
+        Payjp::Subscription.retrieve('sub_xxxxx')
+      end
 
-        payjp_stub(:subscription, :resume)
-        response = subscription.resume
+      context 'when parameter `trial_end` is set to a timestamp' do
+        specify do
+          trial_end = 2145798000
 
-        expect(response.status).to eq 'active'
-        expect(response.resumed_at).to be_an Integer
+          payjp_stub(:subscription, :resume,
+            params: { trial_end: trial_end }, source: { id: 'pln_xxxxx' }
+          )
+          response = subscription.resume(trial_end: trial_end)
+
+          expect(response.status).to eq 'trial'
+          expect(response.resumed_at).to be_an Integer
+          expect(response.trial_end).to eq trial_end
+          expect(response.id).to eq 'pln_xxxxx'
+        end
+      end
+
+      context "when parameter `trial_end` isn't specified" do
+        specify do
+          payjp_stub(:subscription, :resume, params: { prorate: true }, source: { id: 'pln_xxxxx' })
+          response = subscription.resume(prorate: true)
+
+          expect(response.status).to eq 'active'
+          expect(response.resumed_at).to be_an Integer
+          expect(response.trial_end).to be_nil
+          expect(response.prorate).to be_truthy
+          expect(response.id).to eq 'pln_xxxxx'
+        end
       end
     end
 
@@ -307,11 +389,12 @@ RSpec.describe PayjpMock::WebMockWrapper do
         payjp_stub(:subscription, :retrieve)
         subscription = Payjp::Subscription.retrieve('sub_xxxxx')
 
-        payjp_stub(:subscription, :cancel)
+        payjp_stub(:subscription, :cancel, source: { customer: 'cus_xxxxx' })
         response = subscription.cancel
 
         expect(response.status).to eq 'canceled'
         expect(response.canceled_at).to be_an Integer
+        expect(response.customer).to eq 'cus_xxxxx'
       end
     end
 
@@ -329,11 +412,11 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
     describe 'all' do
       specify do
-        payjp_stub(:subscriptions, :all)
+        payjp_stub(:subscriptions, :all, source: { status: 'paused', paused_at: Time.now.to_i })
         response = Payjp::Subscription.all
 
-        expect(response).to be_a Payjp::ListObject
-        expect(response.data.first).to be_a Payjp::Subscription
+        expect(response.data.first.status).to eq 'paused'
+        expect(response.data.first.paused_at).to be_an Integer
       end
     end
   end
@@ -351,8 +434,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
 
     describe 'retrieve' do
       specify do
-        payjp_stub(:token, 'retrieve')
-        expect(Payjp::Token.retrieve('tok_xxxxx')).to be_a Payjp::Token
+        payjp_stub(:token, 'retrieve', source: { used: true })
+        token = Payjp::Token.retrieve('tok_xxxxx')
+
+        expect(token.used).to be_truthy
       end
     end
   end
@@ -360,18 +445,19 @@ RSpec.describe PayjpMock::WebMockWrapper do
   describe 'transfers' do
     describe 'retrieve' do
       specify do
-        payjp_stub(:transfer, :retrieve)
-        expect(Payjp::Transfer.retrieve('tr_xxxxx')).to be_a Payjp::Transfer
+        payjp_stub(:transfer, :retrieve, source: { amount: 1000 })
+        transfer = Payjp::Transfer.retrieve('tr_xxxxx')
+
+        expect(transfer.amount).to eq 1000
       end
     end
 
     describe 'all' do
       specify do
-        payjp_stub(:transfers, :all)
+        payjp_stub(:transfers, :all, source: { amount: 2000 })
         response = Payjp::Transfer.all
 
-        expect(response).to be_a Payjp::ListObject
-        expect(response.data.first).to be_a Payjp::Transfer
+        expect(response.data.first.amount).to eq 2000
       end
     end
 
@@ -381,11 +467,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
           payjp_stub(:transfer, :retrieve)
           transfer = Payjp::Transfer.retrieve('tr_xxxxx')
 
-          payjp_stub({ transfer: :charges }, :all)
+          payjp_stub({ transfer: :charges }, :all, source: { paid: true })
           response = transfer.charges.all
 
-          expect(response).to be_a Payjp::ListObject
-          expect(response.data.first).to be_a Payjp::Charge
+          expect(response.data.first.paid).to be_truthy
         end
       end
     end
@@ -394,18 +479,19 @@ RSpec.describe PayjpMock::WebMockWrapper do
   describe 'events' do
     describe 'retrieve' do
       specify do
-        payjp_stub(:event, :retrieve)
-        expect(Payjp::Event.retrieve('evnt_xxxxx')).to be_a Payjp::Event
+        payjp_stub(:event, :retrieve, source: { id: 'evnt_xxxxx' })
+        event = Payjp::Event.retrieve('evnt_xxxxx')
+
+        expect(event.id).to eq 'evnt_xxxxx'
       end
     end
 
     describe 'all' do
       specify do
-        payjp_stub(:events, :all)
+        payjp_stub(:events, :all, source: { pending_webhooks: 0 })
         response = Payjp::Event.all
 
-        expect(response).to be_a Payjp::ListObject
-        expect(response.data.first).to be_a Payjp::Event
+        expect(response.data.first.pending_webhooks).to eq 0
       end
     end
   end
@@ -413,8 +499,10 @@ RSpec.describe PayjpMock::WebMockWrapper do
   describe 'accounts' do
     describe 'retrieve' do
       specify do
-        stub = payjp_stub(:account, :retrieve)
-        expect(Payjp::Account.retrieve.id).to eq stub[:id]
+        payjp_stub(:account, :retrieve, source: { id: 'acct_xxxxx' })
+        account = Payjp::Account.retrieve
+
+        expect(account.id).to eq 'acct_xxxxx'
       end
     end
   end

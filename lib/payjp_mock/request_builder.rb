@@ -3,10 +3,11 @@ module PayjpMock
     include Util
     using   Ext::Hash
 
-    def initialize(resource, operation, params, error)
+    def initialize(resource, operation, params, source, error)
       @resource  = resource.is_a?(Hash) ? resource.symbolize_keys : resource.to_sym
       @operation = operation.to_sym
       @params    = params.symbolize_keys
+      @source    = source.symbolize_keys
       @error     = error&.to_sym
     end
 
@@ -18,30 +19,38 @@ module PayjpMock
           when :create
             [:post, '/charges', Response::Resource::Charge.new(@params)]
           when :retrieve
-            [:get, '/charges/{id}', Response::Resource::Charge.new]
+            [:get, '/charges/{id}', Response::Resource::Charge.new(@source)]
           when :save
-            [:post, '/charges/{id}', Response::Resource::Charge.new(@params)]
+            charge = Response::Resource::Charge.new(@source).set(@params)
+            [:post, '/charges/{id}', charge]
           when :refund
-            warn('parameter `amount` cannot be specified yet') if @params[:amount]
-
-            charge = Response::Resource::Charge.new(@params.except(:amount))
-            charge.set(amount_refunded: charge.attributes[:amount], refunded: true)
+            charge = Response::Resource::Charge.new(@source)
+            charge
+              .set(@params.except(:amount))
+              .set(amount_refunded: @params[:amount] || charge.attributes[:amount], refunded: true)
 
             [:post, '/charges/{id}/refund', charge]
           when :reauth
-            charge = Response::Resource::Charge.new(
+            charge = Response::Resource::Charge.new(@source)
+            charge.set(
               captured:    false,
               captured_at: nil,
               expiry_days: @params[:expiry_days] || 7
             )
             [:post, '/charges/{id}/reauth', charge]
           when :capture
-            warn('parameter `amount` cannot be specified yet') if @params[:amount]
-
-            charge = Response::Resource::Charge.new(captured: true, captured_at: Time.now.to_i)
+            charge = Response::Resource::Charge.new(@source)
+            charge.set(captured: true, captured_at: Time.now.to_i)
+            charge.set(
+              if @params[:amount]
+                { amount_refunded: charge.attributes[:amount] - @params[:amount], refunded: true }
+              else
+                { amount_refunded: 0, refunded: false }
+              end
+            )
             [:post, '/charges/{id}/capture', charge]
           when :all
-            list = Response::List.new('/charges') { Response::Resource::Charge.new }
+            list = Response::List.new('/charges') { Response::Resource::Charge.new(@source) }
             [:get, '/charges', list]
           else
             raise UnknownOperation, @operation
@@ -51,14 +60,15 @@ module PayjpMock
           when :create
             [:post, '/customers', Response::Resource::Customer.new(@params)]
           when :retrieve
-            [:get, '/customers/{id}', Response::Resource::Customer.new]
+            [:get, '/customers/{id}', Response::Resource::Customer.new(@source)]
           when :save
-            [:post, '/customers/{id}', Response::Resource::Customer.new(@params)]
+            customer = Response::Resource::Customer.new(@source).set(@params)
+            [:post, '/customers/{id}', customer]
           when :delete
             cus_id = generate_resource_id(Response::Resource::Customer::PREFIX)
             [:delete, '/customers/{id}', Response::Deleted.new(cus_id)]
           when :all
-            list = Response::List.new('/customers') { Response::Resource::Customer.new }
+            list = Response::List.new('/customers') { Response::Resource::Customer.new(@source) }
             [:get, '/customers', list]
           else
             raise UnknownOperation, @operation
@@ -68,15 +78,19 @@ module PayjpMock
           when :create
             [:post, '/customers/{customer_id}/cards', Response::Resource::Card.new(@params)]
           when :retrieve
-            [:get, '/customers/{customer_id}/cards/{id}', Response::Resource::Card.new]
+            card = Response::Resource::Card.new(@source)
+            [:get, '/customers/{customer_id}/cards/{id}', card]
           when :save
-            [:post, '/customers/{customer_id}/cards/{id}', Response::Resource::Card.new(@params)]
+            card = Response::Resource::Card.new(@source).set(@params)
+            [:post, '/customers/{customer_id}/cards/{id}', card]
           when :delete
             car_id = generate_resource_id(Response::Resource::Card::PREFIX)
             [:delete, '/customers/{customer_id}/cards/{id}', Response::Deleted.new(car_id)]
           when :all
             cus_id = generate_resource_id(Response::Resource::Customer::PREFIX)
-            list   = Response::List.new("/customres/#{cus_id}/cards") { Response::Resource::Card.new }
+            list = Response::List.new("/customres/#{cus_id}/cards") do
+              Response::Resource::Card.new(@source)
+            end
             [:get, '/customers/{customer_id}/cards', list]
           else
             raise UnknownOperation, @operation
@@ -86,14 +100,15 @@ module PayjpMock
           when :create
             [:post, '/plans', Response::Resource::Plan.new(@params)]
           when :retrieve
-            [:get, '/plans/{id}', Response::Resource::Plan.new]
+            [:get, '/plans/{id}', Response::Resource::Plan.new(@source)]
           when :save
-            [:post, '/plans/{id}', Response::Resource::Plan.new(@params)]
+            plan = Response::Resource::Plan.new(@source).set(@params)
+            [:post, '/plans/{id}', plan]
           when :delete
             pln_id = generate_resource_id(Response::Resource::Plan::PREFIX)
             [:delete, '/plans/{id}', Response::Deleted.new(pln_id)]
           when :all
-            list = Response::List.new('/plans') { Response::Resource::Plan.new }
+            list = Response::List.new('/plans') { Response::Resource::Plan.new(@source) }
             [:get, '/plans', list]
           else
             raise UnknownOperation, @operation
@@ -110,47 +125,50 @@ module PayjpMock
               end
             [:post, '/subscriptions', subscription]
           when :retrieve
-            [:get, '/subscriptions/{id}', Response::Resource::Subscription.new]
+            [:get, '/subscriptions/{id}', Response::Resource::Subscription.new(@source)]
           when :save
-            subscription =
+            subscription = Response::Resource::Subscription.new(@source)
+            subscription.set(
               if @params[:trial_end] == 'now'
                 warn('parameter `trial_end` cannot be set to `now` yet')
-                Response::Resource::Subscription.new(@params.except(:trial_end))
+                @params.except(:trial_end)
               else
-                Response::Resource::Subscription.new(@params)
+                @params
               end
+            )
             [:post, '/subscriptions/{id}', subscription]
           when :pause
-            subscription = Response::Resource::Subscription.new(
-              status:    'paused',
-              paused_at: Time.now.to_i
-            )
+            subscription = Response::Resource::Subscription.new(@source)
+            subscription.set(status: 'paused', paused_at: Time.now.to_i)
+
             [:post, '/subscriptions/{id}/pause', subscription]
           when :resume
-            subscription =
-              case @params[:trial_end]
-              when nil
-                Response::Resource::Subscription.new(@params).set(status: 'active')
-              when 'now'
-                warn('parameter `trial_end` cannot be set to `now` yet')
-                Response::Resource::Subscription.new(@params.except(:trial_end)).set(status: 'active')
-              else
-                Response::Resource::Subscription.new(@params)
-              end
+            subscription = Response::Resource::Subscription.new(@source)
             subscription.set(resumed_at: Time.now.to_i)
+
+            case @params[:trial_end]
+            when nil
+              subscription.set(@params).set(status: 'active')
+            when 'now'
+              warn('parameter `trial_end` cannot be set to `now` yet')
+              subscription.set(@params.except(:trial_end)).set(status: 'active')
+            else
+              subscription.set(@params)
+            end
 
             [:post, '/subscriptions/{id}/resume', subscription]
           when :cancel
-            subscription = Response::Resource::Subscription.new(
-              status:      'canceled',
-              canceled_at: Time.now.to_i
-            )
+            subscription = Response::Resource::Subscription.new(@source)
+            subscription.set(status: 'canceled', canceled_at: Time.now.to_i)
+
             [:post, '/subscriptions/{id}/cancel', subscription]
           when :delete
             sub_id = generate_resource_id(Response::Resource::Subscription::PREFIX)
             [:delete, '/subscriptions/{id}', Response::Deleted.new(sub_id)]
           when :all
-            list = Response::List.new('/subscriptions') { Response::Resource::Subscription.new }
+            list = Response::List.new('/subscriptions') do
+              Response::Resource::Subscription.new(@source)
+            end
             [:get, '/subscriptions', list]
           else
             raise UnknownOperation, @operation
@@ -160,16 +178,16 @@ module PayjpMock
           when :create
             [:post, '/tokens', Response::Resource::Token.new(@params)]
           when :retrieve
-            [:get, '/tokens/{id}', Response::Resource::Token.new]
+            [:get, '/tokens/{id}', Response::Resource::Token.new(@source)]
           else
             raise UnknownOperation, @operation
           end
         when :transfer, :transfers
           case @operation
           when :retrieve
-            [:get, '/transfers/{id}', Response::Resource::Transfer.new]
+            [:get, '/transfers/{id}', Response::Resource::Transfer.new(@source)]
           when :all
-            list = Response::List.new('/transfers') { Response::Resource::Transfer.new }
+            list = Response::List.new('/transfers') { Response::Resource::Transfer.new(@source) }
             [:get, '/transfers', list]
           else
             raise UnknownOperation, @operation
@@ -178,7 +196,9 @@ module PayjpMock
           case @operation
           when :all
             tr_id = generate_resource_id(Response::Resource::Transfer::PREFIX)
-            list  = Response::List.new("/transfers/#{tr_id}/charges") { Response::Resource::Charge.new }
+            list = Response::List.new("/transfers/#{tr_id}/charges") do
+              Response::Resource::Charge.new(@source)
+            end
             [:get, '/transfers/{transfer_id}/charges', list]
           else
             raise UnknownOperation, @operation
@@ -186,9 +206,9 @@ module PayjpMock
         when :event, :events
           case @operation
           when :retrieve
-            [:get, '/events/{id}', Response::Resource::Event.new]
+            [:get, '/events/{id}', Response::Resource::Event.new(@source)]
           when :all
-            list = Response::List.new('/events') { Response::Resource::Event.new }
+            list = Response::List.new('/events') { Response::Resource::Event.new(@source) }
             [:get, '/events', list]
           else
             raise UnknownOperation, @operation
@@ -196,7 +216,7 @@ module PayjpMock
         when :account, :accounts
           case @operation
           when :retrieve
-            [:get, '/accounts', Response::Resource::Account.new]
+            [:get, '/accounts', Response::Resource::Account.new(@source)]
           else
             raise UnknownOperation, @operation
           end

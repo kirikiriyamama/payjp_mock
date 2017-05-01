@@ -1,7 +1,7 @@
 module PayjpMock
   module WebMockWrapper
-    def payjp_stub(resource, operation, params: {}, error: nil)
-      builder = RequestBuilder.new(resource, operation, params, error)
+    def payjp_stub(resource, operation, params: {}, source: {}, error: nil)
+      builder = RequestBuilder.new(resource, operation, params, source, error)
       request = builder.build
       request.stub
     end

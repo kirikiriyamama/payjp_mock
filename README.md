@@ -47,6 +47,13 @@ specify do
   payjp_stub({ customer: :cards }, :all)
   customer.cards.all
 
+  # Specifying response attributes
+  payjp_stub(:charge, :retrieve, source: { captured: false, captured_at: nil })
+  charge = Payjp::Charge.retrieve('ch_xxxxx')
+
+  charge.captured    #=> false
+  charge.captured_at #=> nil
+
   # Stubbing error responses
   payjp_stub({ customer: :cards }, :create, error: :invalid_request_error)
   customer.cards.create #=> Raises a Payjp::InvalidRequestError
