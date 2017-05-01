@@ -22,8 +22,28 @@ RSpec.describe PayjpMock::Ext::Hash do
   describe '#deep_transform_values' do
     specify do
       expect(
-        { k1: 1, k2: 2, k3: { k4: 4, k5: { k6: 6 } } }.deep_transform_values(&:to_s)
-      ).to eq({ k1: '1', k2: '2', k3: { k4: '4', k5: { k6: '6' } } })
+        {
+          k1: 1,
+          k2: 2,
+          k3: {
+            k4: 4,
+            k5: {
+              k6: 6
+            }
+          }
+        }.deep_transform_values(&:to_s)
+      ).to eq(
+        {
+          k1: '1',
+          k2: '2',
+          k3: {
+            k4: '4',
+            k5: {
+              k6: '6'
+            }
+          }
+        }
+      )
     end
   end
 end
