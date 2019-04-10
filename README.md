@@ -2,7 +2,7 @@
 
 A stubbing library for PAY.JP
 
-This library creates PAY.JP API stubs and generates dummy responses. This is under development, so any incompatible change might happen.
+This library creates PAY.JP API stubs and generates dummy responses.
 
 ## Installation
 
@@ -21,6 +21,16 @@ Or install it yourself as:
     $ gem install payjp_mock
 
 ## Usage
+
+### Signature
+
+```
+payjp_stub(resource, operation, params: {}, source: {}, error: nil, response: nil)
+```
+
+See also: [lib/payjp_mock/webmock_wrapper.rb](https://github.com/kirikiriyamama/payjp_mock/blob/master/lib/payjp_mock/webmock_wrapper.rb)
+
+### Example
 
 Here's an example with RSpec:
 
@@ -41,7 +51,7 @@ specify do
   Payjp::Charge.create(amount: 3500, card: 'tok_xxxxx', currency: 'jpy')
 
   # Stubbing nested resource operations such as customer's card list retrival
-  payjp_stub(:customer, :retrival)
+  payjp_stub(:customer, :retrieve)
   customer = Payjp::Customer.retrieve('cus_xxxxx')
 
   payjp_stub({ customer: :cards }, :all)
@@ -61,8 +71,6 @@ specify do
   # Specifying error response attributes
   payjp_stub(:charges, :create, response: payjp_card_error(code: 'processing_error'))
   Payjp::Charge.create #=> Raises a Payjp::CardError with code processing_error
-
-  # snip
 end
 ```
 
